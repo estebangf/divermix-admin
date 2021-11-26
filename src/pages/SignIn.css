@@ -1,0 +1,14 @@
+.SignIn .Stack {
+  padding-top: 32px;
+  padding-bottom: 32px;
+}
+
+.SignIn .Google {
+  background: hsl(4, 86%, 58%);
+}
+.SignIn .Facebook {
+  background: -webkit-linear-gradient(266deg, #5f96fc 0%,#87b1ff 100%);
+}
+.SignIn .Instagram {
+  background: -webkit-linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%);
+}
