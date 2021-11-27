@@ -1,10 +1,47 @@
-import app, { db, auth } from "./firebase-init";
+import app, { db, auth, messaging, vapidKey } from "./firebase-init";
 
 import { collection, query, where, orderBy, getDocs, addDoc, getDoc, doc, updateDoc, setDoc, onSnapshot, Timestamp, arrayUnion } from "firebase/firestore";
 import { User, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, getAuth } from "firebase/auth";
 import UserProfile, { UsersProfile } from "../models/UserProfile";
 import Movement, { Movements } from "../models/Movement";
 import Reservation, { Reservations } from "../models/Reservation";
+import { getToken, onMessage } from "firebase/messaging";
+import SnackNotification from "../models/SnackNotification";
+import axios from "axios"
+
+
+export function getTokenUser() {
+  getToken(messaging, { vapidKey }).then((currentToken) => {
+    if (currentToken) {
+      console.log("TOKEN => ", currentToken)
+    } else {
+      // Show permission request UI
+      console.log('No registration token available. Request permission to generate one.');
+    }
+  }).catch((err) => {
+    console.log('An error occurred while retrieving token. ', err);
+  });
+}
+
+export function onMessageRecived(show: Function) {
+  onMessage(messaging, (payload) => {
+    console.log("Mensaje Recibido => ", payload)
+    if (payload.data?.message) {
+      let notification: SnackNotification = {
+        message: payload.data.message,
+        severity: payload.data.severity as "success" | "info" | "warning" | "error"
+      }
+      show(notification)
+    } else if (payload.notification) {
+      let notification: SnackNotification = {
+        message: payload.notification.body as string,
+        severity: "info"
+      }
+      show(notification)
+    }
+  });
+}
+
 
 export function initStatesApp(setUser: Function, setReady: Function) {
   onAuthStateChanged(auth, (userObserver) => {
@@ -51,7 +88,7 @@ export function initStatesApp(setUser: Function, setReady: Function) {
 }
 
 
-export function getCurrentUser(){
+export function getCurrentUser() {
   return auth.currentUser
 }
 

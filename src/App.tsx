@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Switch, Redirect, Route } from "react-router-dom";
 import './App.css';
 import useDialogLoading from './components/useDialogLoading';
-import { initStatesApp } from './database/firebase-functions';
+import useSnackbarAlert from './components/useSnackbarAlert';
+import { getTokenUser, initStatesApp, onMessageRecived } from './database/firebase-functions';
 import UserProfile from './models/UserProfile';
 import Admin from './pages/Admin';
 import Home from './pages/Home';
@@ -18,6 +19,7 @@ function App() {
   const [user, setUser] = useState<UserProfile>();
   const [ready, setReadyState] = useState<boolean>(false)
   const Loading = useDialogLoading(true);
+  const SnackbarAlert = useSnackbarAlert();
 
   function setReady(state: boolean) {
     setReadyState(state)
@@ -27,6 +29,8 @@ function App() {
 
   useEffect(() => {
     initStatesApp(setUser, setReady)
+    onMessageRecived(SnackbarAlert.open)
+    getTokenUser()
   }, [])
   
   if (ready) return (
@@ -61,6 +65,7 @@ function App() {
         :
         <SignIn />
       }
+      <SnackbarAlert.component />
     </BrowserRouter>
   );
   else return (
