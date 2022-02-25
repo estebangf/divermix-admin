@@ -80,7 +80,7 @@ const Movimiento: React.FC = () => {
       }
       Loading.open()
       if (id == "new") {
-        newMovement(movement).then(() => {
+        newMovement(mov).then(() => {
           Loading.close()
           history.replace("/movements")
         }).catch(e => {
@@ -106,7 +106,6 @@ const Movimiento: React.FC = () => {
   const setFecha = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
 
     let value = e.target.value;
-    console.log("FECHA => ", value);
 
     if (value)
       setMovement({
@@ -122,7 +121,7 @@ const Movimiento: React.FC = () => {
 
   const dateToString = (date: Date) => {
     date.setSeconds(0)
-    return new Date(date.toString().split('GMT')[0] + ' UTC').toISOString().split('.')[0].replace("Z", "")
+    return new Date(date.toString().split('GMT')[0] + ' UTC').toISOString().split('.')[0].replace("Z", "").split(":")[0]+":"+new Date(date.toString().split('GMT')[0] + ' UTC').toISOString().split('.')[0].replace("Z", "").split(":")[1]
   }
 
 

@@ -5,7 +5,7 @@ import { ChangeEvent, useEffect, useState } from "react";
 import { useParams, useHistory } from "react-router";
 import MyAppBar from "../components/MyAppBar";
 import useDialogLoading from "../components/useDialogLoading";
-import { editReservation, getCurrentUser, newReservation } from "../database/firebase-functions";
+import { editReservation, getCurrentUser, newReservation, getReservation } from "../database/firebase-functions";
 import Reservation from "../models/Reservation"
 
 
@@ -53,7 +53,7 @@ const Reserva: React.FC = () => {
   const setValue = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     let v = event.target.value;
     let name = event.target.name;
-    if(v) {
+    if (v) {
       setValues({
         ...values,
         [name]: {
@@ -72,12 +72,12 @@ const Reserva: React.FC = () => {
   }
 
   const isOk = () => {
-    let ok = 
-    values.description.value &&
-    values.date.value &&
-    values.phone.value &&
-    values.address.value &&
-    parseInt(values.budget.value);
+    let ok =
+      values.description.value &&
+      values.date.value &&
+      values.phone.value &&
+      values.address.value &&
+      parseInt(values.budget.value);
 
     return ok
   }
@@ -123,17 +123,32 @@ const Reserva: React.FC = () => {
   }
 
 
+  const dateToString = (date: Date) => {
+    date.setSeconds(0)
+    return new Date(date.toString().split('GMT')[0] + ' UTC').toISOString().split('.')[0].replace("Z", "")
+  }
 
   useEffect(() => {
     if (id != "new") {
-      // getReservation(id).then(r => {
-      //   setReservation({ ...r })
-      //   setTitle("Editar Movimiento")
-      //   Loading.close()
-      // }).catch(e => {
-      //   alert(e)
-      //   Loading.close()
-      // })
+      getReservation(id).then(r => {
+        let _reservation = InitialValues;
+        Object.keys(InitialValues).map(k => {
+          if (k != "id")
+            _reservation[k as keyof Values] = {
+              ...InitialTextFieldValue,
+              value: k != "date" ?
+                r[k as keyof Reservation] as string :
+                dateToString(r.date.toDate())
+            }
+        })
+        setTitle("Editar Reserva")
+        setExistReservation(true);
+        setValues({ ..._reservation });
+        Loading.close()
+      }).catch(e => {
+        alert(e)
+        Loading.close()
+      })
     } else {
       setTitle("Crear Reserva")
       Loading.close()
@@ -161,7 +176,7 @@ const Reserva: React.FC = () => {
               </Typography>
               <TextField
                 id="date"
-                label="Fecha del movimiento"
+                label="Fecha de la reserva"
                 type="datetime-local"
                 value={values.date.value}
                 name="date"
@@ -179,7 +194,7 @@ const Reserva: React.FC = () => {
               </Typography>
               <TextField
                 id="description"
-                label="Detalle del movimiento"
+                label="Detalle de la reserva"
                 type="text"
                 value={values.description.value}
                 name="description"

@@ -30,6 +30,55 @@ import priceFormat from '../tools/priceFormat';
 import { UsersProfile } from '../models/UserProfile';
 
 
+
+
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+
+
+// export const data = {
+//   labels,
+//   datasets: [
+//     {
+//       label: 'Dataset 1',
+//       data: labels.map(() => faker.datatype.number({ min: -1000, max: 1000 })),
+//       borderColor: 'rgb(255, 99, 132)',
+//       backgroundColor: 'rgba(255, 99, 132, 0.5)',
+//     },
+//     {
+//       label: 'Dataset 2',
+//       data: labels.map(() => faker.datatype.number({ min: -1000, max: 1000 })),
+//       borderColor: 'rgb(53, 162, 235)',
+//       backgroundColor: 'rgba(53, 162, 235, 0.5)',
+//     },
+//   ],
+// };
+
+
+
+
+
+
 const FabStyled = styled(Fab)(({ theme }) => ({
   position: 'fixed',
   bottom: 16,
@@ -40,6 +89,9 @@ const FabStyled = styled(Fab)(({ theme }) => ({
 const Movimientos: React.FC = () => {
   const [movements, setMovements] = useState<Movements>([])
   const [balances, setBalances] = useState<number[]>([])
+  const [balancesGrafico, setBalancesGrafico] = useState<number[]>([])
+  const [fechas, setFechas] = useState<string[]>([])
+  const [balanceActual, setBalanceActual] = useState<number>(0)
 
   const [users, setUsers] = useState<UsersProfile>([])
 
@@ -51,18 +103,48 @@ const Movimientos: React.FC = () => {
     getAllUsers().then(us => {
       setUsers(us);
       getMovements().then(e => {
+        let ba: number = 0
+        let marcaDeInversion = false
         let bs: number[] = []
+        let bsGrafico: number[] = []
+        let fs: string[] = []
         e.forEach((m, i) => {
+          let newBA = m.amount;
           let newAmount = m.amount
-          if (m.type == 'egress')
+          let _f = `${m.date.toDate().getDate()}/${m.date.toDate().getMonth()}`;
+          if (m.type == 'egress') {
+            newBA = -newBA
             newAmount = -newAmount
+          }
+          if (newBA > 0)
+            marcaDeInversion = true
+          if (marcaDeInversion)
+            ba += newBA;
+
           if (i != 0)
             bs.push(bs[i - 1] + newAmount)
           else
             bs.push(newAmount)
+
+
+          if (!fs.includes(_f)) {
+            fs.push(_f)
+            if (i != 0)
+              bsGrafico.push(bsGrafico[bsGrafico.length - 1] + newAmount)
+            else
+              bsGrafico.push(newAmount)
+          } else {
+            if (i != 0)
+              bsGrafico[bsGrafico.length - 1] += newAmount
+            else
+              bsGrafico[0] += newAmount
+          }
         })
+        setBalanceActual(ba)
         setMovements(e)
         setBalances([...bs])
+        setBalancesGrafico([...bsGrafico])
+        setFechas([...fs])
         Loading.close()
       }).catch(e => {
         alert(e)
@@ -85,6 +167,18 @@ const Movimientos: React.FC = () => {
     return user ? user.displayName : "Sin nombre"
   }
 
+  const optionsChart = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: 'Grafico de movimientos',
+      },
+    },
+  };
 
   return (
     <div className="Movimientos">
@@ -100,14 +194,26 @@ const Movimientos: React.FC = () => {
             justifyContent="center"
             spacing={1}
           >
+            <Line options={optionsChart} data={{
+              labels: fechas,
+              datasets: [{
+                label: 'Balance',
+                data: balancesGrafico,
+                borderColor: 'rgb(255, 99, 132)',
+                backgroundColor: 'rgba(255, 99, 132, 0.5)',
+              }]
+            }} />
+            <Typography className="BalanceActual" variant='h4'>
+              Post Inversión {priceFormat.format(balanceActual)}
+            </Typography>
             <TableContainer component={Paper} className="DataGrid">
               <Table sx={{ minWidth: 650 }} aria-label="simple table">
                 <TableHead>
-                  <TableRow>
+                  <TableRow className="Encabezado">
                     <TableCell width="100" align="left">Fecha</TableCell>
                     <TableCell width="400" align="left">Descripcion</TableCell>
-                    <TableCell width="250" align="right">Ingreso</TableCell>
                     <TableCell width="250" align="right">Egreso</TableCell>
+                    <TableCell width="250" align="right">Ingreso</TableCell>
                     <TableCell width="250" align="right">Balance</TableCell>
                   </TableRow>
                 </TableHead>
@@ -125,9 +231,9 @@ const Movimientos: React.FC = () => {
                           </LinkStyled>
                           <Typography variant="caption" display="block" gutterBottom>{getNameToUser(row.createdBy)}</Typography>
                         </TableCell>
-                        <TableCell align="right">{row.type == 'egress' && priceFormat.format(row.amount)}</TableCell>
-                        <TableCell align="right">{row.type == 'entry' && priceFormat.format(row.amount)}</TableCell>
-                        <TableCell align="right">{priceFormat.format(balances[i])}</TableCell>
+                        <TableCell className="Egress" align="right">{row.type == 'egress' && priceFormat.format(row.amount)}</TableCell>
+                        <TableCell className="Entry" align="right">{row.type == 'entry' && priceFormat.format(row.amount)}</TableCell>
+                        <TableCell className={balances[i] < 0 ? "Egress" : "Entry"} align="right">{priceFormat.format(balances[i])}</TableCell>
                       </TableRow>
                     )
                   })}

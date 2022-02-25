@@ -20,11 +20,15 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogContentText
+  DialogContentText,
+  DialogActions,
+  Button,
+  Divider,
+  Chip
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 
-import { Add } from '@mui/icons-material';
+import { Add, LockClock, Timer, Person, WhatsApp, Phone, Room, AttachMoney } from '@mui/icons-material';
 import { getAllUsers, getReservations } from '../database/firebase-functions';
 import useDialogLoading from '../components/useDialogLoading';
 
@@ -58,6 +62,11 @@ const DIAS = [
   "Sábado"
 ]
 
+const AÑOS = [
+  2021,
+  2022
+]
+
 const MESES = [
   "Enero",
   "Febrero",
@@ -82,6 +91,7 @@ const Reservas: React.FC = () => {
   const [reservations, setReservations] = useState<Reservations>([])
   const [reservationSelected, setReservationSelected] = useState<Reservation>()
   const [mostrarDomingo, setMostrarDomingo] = useState<boolean>(false)
+  const [año, setAño] = useState<number>((new Date()).getFullYear())
   const [mes, setMes] = useState<number>((new Date()).getMonth())
 
   const [users, setUsers] = useState<UsersProfile>([])
@@ -122,9 +132,9 @@ const Reservas: React.FC = () => {
     let ds: Dia[] = []
     let diaSemana = 0;
     let dateOfMonth = new Date();
-    dateOfMonth.setFullYear(2021, mes, 1)
+    dateOfMonth.setFullYear(año, mes, 1)
     let lastDateOfMonth = new Date();
-    lastDateOfMonth.setFullYear(2021, mes + 1, 0)
+    lastDateOfMonth.setFullYear(año, mes + 1, 0)
     let monthFinished = true
     do {
       monthFinished = dateOfMonth.getDate() != lastDateOfMonth.getDate()
@@ -134,12 +144,14 @@ const Reservas: React.FC = () => {
           n: dateOfMonth.getDate(),
           r: reservations.filter(res => {
             let d = res.date.toDate()
-            return d.getMonth() == dateOfMonth.getMonth() && d.getDate() == dateOfMonth.getDate()
+            return d.getMonth() == dateOfMonth.getMonth() &&
+              d.getDate() == dateOfMonth.getDate() &&
+              d.getFullYear() == dateOfMonth.getFullYear()
           })
         })
         // else
         //   ds.push(0)
-        dateOfMonth.setFullYear(2021, mes, dateOfMonth.getDate() + 1)
+        dateOfMonth.setFullYear(año, mes, dateOfMonth.getDate() + 1)
       } else {
         // if (diaSemana != 0 || mostrarDomingo)
         ds.push({ r: [] })
@@ -171,15 +183,31 @@ const Reservas: React.FC = () => {
             className="Stack"
             direction="column"
             justifyContent="center"
-            spacing={1}
+            spacing={2}
           >
+
             <FormControl fullWidth>
-              <InputLabel id="demo-simple-select-label">Mes</InputLabel>
+              <InputLabel id="select-label-año">Año</InputLabel>
               <Select
-                labelId="demo-simple-select-label"
-                id="demo-simple-select"
+                labelId="select-label-año"
+                id="select-año"
+                value={año}
+                label="Año"
+                onChange={e => setAño(parseInt(e.target.value as string))}
+              >
+                {AÑOS.map((a, i) => {
+                  return <MenuItem value={a}>{a}</MenuItem>
+                })}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth>
+              <InputLabel id="select-label-mes">Mes</InputLabel>
+              <Select
+                labelId="select-label-mes"
+                id="select-mes"
                 value={mes}
-                label="Age"
+                label="Mes"
                 onChange={e => setMes(parseInt(e.target.value as string))}
               >
                 {MESES.map((m, i) => {
@@ -218,8 +246,14 @@ const Reservas: React.FC = () => {
                           if (indexDia == 0 && mostrarDomingo || indexDia != 0)
                             return <TableCell align="right">
                               {dia.n}
-                              {dia.r.length ? dia.r.map(rs => {
-                                return <p onClick={e => setReservationSelected(rs)}>{rs.description} {rs.date.toDate().toLocaleTimeString().slice(0, 5)}hs</p>
+                              {dia.r.length ? dia.r.map((rs, indexR) => {
+                                return <>
+                                  {indexR > 0 && dia.r.length > 1 && <Divider />}
+                                  <p onClick={e => setReservationSelected(rs)}>
+                                    {rs.description}<br />
+                                    <Chip label={rs.date.toDate().toLocaleTimeString().slice(0, 5) + "hs"} />
+                                  </p>
+                                </>
                               }) : ""}
                             </TableCell>
                         })}
@@ -240,16 +274,50 @@ const Reservas: React.FC = () => {
       <Loading.component />
       <SnackbarAlert.component />
 
-      {reservationSelected &&
+      {
+        (reservationSelected && reservationSelected.id) &&
         <Dialog onClose={e => setReservationSelected(undefined)} open={!!reservationSelected}>
           <DialogTitle>{reservationSelected.description}</DialogTitle>
           <DialogContent>
-            <DialogContentText>{reservationSelected.date.toDate().toLocaleString().slice(0, 16)}hs</DialogContentText>
-            <DialogContentText>{reservationSelected.phone}</DialogContentText>
-            <DialogContentText>{reservationSelected.phone2}</DialogContentText>
-            <DialogContentText>{reservationSelected.address}</DialogContentText>
-            <DialogContentText>{priceFormat.format(reservationSelected.budget)}</DialogContentText>
-            <DialogContentText>{getNameToUser(reservationSelected?.createdBy)}</DialogContentText>
+            <DialogContentText className="PropieritiView">
+              <Timer className="PropieritiIcon" />
+              {reservationSelected.date.toDate().toLocaleString().slice(0, 16)}hs
+            </DialogContentText>
+            {(reservationSelected.phone.trim() != "" && reservationSelected.phone != "0") &&
+              <DialogContentText className="PropieritiView">
+                <Phone className="PropieritiIcon" />
+                {reservationSelected.phone}
+                <a className="LinkWhatsapp" target="_blank" href={`https://api.whatsapp.com/send?phone=${reservationSelected.phone}`}>
+                  <Button color='success'>Enviar<span className="blanc">__</span><WhatsApp /></Button>
+                </a>
+              </DialogContentText>
+            }
+            {(reservationSelected.phone2.trim() != "" && reservationSelected.phone2 != "0") &&
+              <DialogContentText className="PropieritiView">
+                <Phone className="PropieritiIcon" />
+                {reservationSelected.phone2}
+                <a className="LinkWhatsapp" target="_blank" href={`https://api.whatsapp.com/send?phone=${reservationSelected.phone2}`}>
+                  <Button color='success'>Enviar<span className="blanc">__</span><WhatsApp /></Button>
+                </a>
+              </DialogContentText>
+            }
+            <DialogContentText className="PropieritiView">
+              <Room className="PropieritiIcon" />
+              {reservationSelected.address}
+            </DialogContentText>
+            <DialogContentText className="PropieritiView">
+              <AttachMoney className="PropieritiIcon" />
+              {priceFormat.format(reservationSelected.budget)}
+            </DialogContentText>
+            <DialogContentText className="PropieritiView">
+              <Person className="PropieritiIcon" />
+              {getNameToUser(reservationSelected.createdBy)}
+            </DialogContentText>
+            <DialogActions>
+              <LinkStyled to={`/reservations/${reservationSelected.id}`}>
+                <Button>Revisar</Button>
+              </LinkStyled>
+            </DialogActions>
           </DialogContent>
         </Dialog>
       }
@@ -258,225 +326,3 @@ const Reservas: React.FC = () => {
 };
 
 export default Reservas;
-
-
-/*
-
-import {
-  Container,
-  Stack,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Fab,
-  Typography,
-  Grid,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select
-} from '@mui/material';
-import { useEffect, useState } from 'react';
-
-import { Add } from '@mui/icons-material';
-import { getAllUsers, getReservations } from '../database/firebase-functions';
-import useDialogLoading from '../components/useDialogLoading';
-
-import './Reservas.css'
-import useSnackbarAlert from '../components/useSnackbarAlert';
-import LinkStyled from '../components/LinkStyled';
-import MyAppBar from '../components/MyAppBar';
-import Reservation, { Reservations } from '../models/Reservation';
-
-import { styled } from '@mui/material/styles';
-
-
-import priceFormat from '../tools/priceFormat';
-import { UsersProfile } from '../models/UserProfile';
-
-
-const FabStyled = styled(Fab)(({ theme }) => ({
-  position: 'fixed',
-  bottom: 16,
-  right: 16,
-}));
-
-
-const DIAS = [
-  // "Domingo",
-  "Lunes",
-  "Martes",
-  "Miercoles",
-  "Jueves",
-  "Viernes",
-  "Sábado"
-]
-
-const MESES = [
-  "Enero",
-  "Febrero",
-  "Marzo",
-  "Abril",
-  "Mayo",
-  "Junio",
-  "Julio",
-  "Agosto",
-  "Septiembre",
-  "Octubre",
-  "Noviembre",
-  "Diciembre",
-]
-
-interface Dia {
-  n?: number,
-  r: Reservations
-}
-
-const Reservas: React.FC = () => {
-  const [reservations, setReservations] = useState<Reservations>([])
-  const [mes, setMes] = useState<number>((new Date()).getMonth())
-
-  const [users, setUsers] = useState<UsersProfile>([])
-
-  const Loading = useDialogLoading(true)
-  const SnackbarAlert = useSnackbarAlert()
-
-
-  const getAll = () => {
-    getAllUsers().then(us => {
-      setUsers(us);
-      getReservations().then(e => {
-        setReservations(e)
-        Loading.close()
-      }).catch(e => {
-        alert(e)
-        Loading.close()
-      })
-    }).catch(e => {
-      alert(e)
-      Loading.close()
-    })
-  }
-
-
-  useEffect(() => {
-    getAll()
-  }, [])
-
-
-  const getNameToUser = (idUser: string) => {
-    let user = users.find(e => e.id == idUser)
-    return user ? user.displayName : "Sin nombre"
-  }
-
-  const dias = () => {
-    let ds: Dia[] = []
-    let diaSemana = 0;
-    let dateOfMonth = new Date();
-    dateOfMonth.setFullYear(2021, mes, 1)
-    let lastDateOfMonth = new Date();
-    lastDateOfMonth.setFullYear(2021, mes + 1, 0)
-    let monthFinished = true
-    do {
-      monthFinished = dateOfMonth.getDate() != lastDateOfMonth.getDate()
-      if (diaSemana == dateOfMonth.getDay()) {
-        if (diaSemana != 0)
-          ds.push({
-            n: dateOfMonth.getDate(),
-            r: reservations.filter(res => {
-              let d = res.date.toDate()
-              return d.getMonth() == dateOfMonth.getMonth() && d.getDate() == dateOfMonth.getDate()
-            })
-          })
-        // else
-        //   ds.push(0)
-        dateOfMonth.setFullYear(2021, mes, dateOfMonth.getDate() + 1)
-      } else {
-        if (diaSemana != 0)
-          ds.push({ r: [] })
-        // else
-        //   ds.push(0)
-      }
-      if (++diaSemana == 7)
-        diaSemana = 0
-    } while (monthFinished)
-    for (let i = diaSemana; i < 7; i++) {
-      ds.push({ r: [] })
-    }
-    return ds;
-  }
-  return (
-    <div className="Reservas">
-      <MyAppBar title="Reservas" />
-      <div className="Content">
-        <Container
-          className="login-grid"
-          maxWidth="md"
-        >
-          <FormControl fullWidth>
-            <InputLabel id="demo-simple-select-label">Age</InputLabel>
-            <Select
-              labelId="demo-simple-select-label"
-              id="demo-simple-select"
-              value={mes}
-              label="Age"
-              onChange={e => setMes(parseInt(e.target.value as string))}
-            >
-              {MESES.map((m, i) => {
-                return <MenuItem value={i}>{m}</MenuItem>
-              })}
-            </Select>
-          </FormControl>
-          <Grid
-            container
-            direction="row"
-            justifyContent="flex-start"
-            alignItems="stretch"
-            spacing={2}
-          >
-            {DIAS.map(d => {
-              return <Grid item xs={2}>
-                {d}
-              </Grid>
-            })}
-            {dias().map((d, i) => {
-              return <>
-                <Grid item xs={2}>
-                  <Paper sx={{ minHeight: "100%", width: "100%" }} className="Dia" >
-                    {d.n ? <>
-                      {d.n}<br />
-                      {d.r.length ? d.r.map(rs => {
-                        return <p>{rs.description} {rs.date.toDate().toLocaleTimeString().slice(0, 5)}hs</p>
-                      })
-                        :
-                        <div className="Vacio" />
-                      }
-                    </>
-                      :
-                      <div className="Vacio" />
-                    }
-                  </Paper>
-                </Grid>
-              </>
-            })}
-          </Grid>
-        </Container>
-      </div>
-      <LinkStyled to="/reservations/new">
-        <FabStyled color="primary" aria-label="add">
-          <Add />
-        </FabStyled>
-      </LinkStyled>
-      <Loading.component />
-      <SnackbarAlert.component />
-    </div >
-  );
-};
-
-export default Reservas;
-
-*/

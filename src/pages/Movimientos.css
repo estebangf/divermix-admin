@@ -6,3 +6,24 @@
   padding-top: 32px;
   padding-bottom: 100px;
 }
+
+
+.Movimientos .Content .BalanceActual {
+  padding: 24px;
+  text-align: center;
+}
+
+.Movimientos .Content .Encabezado {
+  background: #162d4f;
+}
+.Movimientos .Content .Encabezado th{
+  color: #FFFFFF;
+}
+
+
+.Movimientos .Content .Egress {
+  color: red;
+}
+.Movimientos .Content .Entry {
+  color: green;
+}

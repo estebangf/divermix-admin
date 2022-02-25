@@ -12,22 +12,22 @@ import { useHistory } from 'react-router';
 const tarjetas = [
   {
     title: "Nueva Reserva",
-    subTitle: "Estas son las transacciones de dinero del emprendimiento",
-    description: "Revisar, filtrar, etc.",
+    subTitle: "Agregar una reserva ya confirmada a el calendario.",
+    description: "Nombre, castillo, etc.",
     image: "/statics/imagens/menus/nueva_reserva.png",
     link: "/reservations/new",
     roles: ["user"]
   }, {
     title: "Reservas",
-    subTitle: "Estas son las transacciones de dinero del emprendimiento",
-    description: "Revisar, filtrar, etc.",
+    subTitle: "Estas son las reservas ya confirmadas guardadas en el calendario.",
+    description: "Calendario mensual",
     image: "/statics/imagens/menus/ver_reservas.jpg",
     link: "/reservations",
     roles: ["user"]
   }, {
     title: "Nuevo Movimiento",
-    subTitle: "Estas son las transacciones de dinero del emprendimiento",
-    description: "Revisar, filtrar, etc.",
+    subTitle: "Agregar un movimiento a la lista financiera.",
+    description: "Monto, description, etc.",
     image: "/statics/imagens/menus/nuevo_movimiento.png",
     link: "/movements/new",
     roles: ["user"]

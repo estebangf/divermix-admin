@@ -1,0 +1,18 @@
+.BoxNotifications {
+  /* top: 50px !important; */
+}
+
+.BoxNotifications ul {
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+
+.BoxNotifications .Divider {
+  margin-top: 0px !important;
+  margin-bottom: 0px !important;
+}
+
+
+.PaperNotifications {
+  /* top: 50px !important; */
+}
